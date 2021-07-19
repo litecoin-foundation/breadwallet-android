@@ -1,16 +1,18 @@
 package com.breadwallet.tools.util
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
+import android.content.res.Configuration
+import android.os.Build
 import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import com.breadwallet.R
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.*
 
 
 /** Litewallet
@@ -25,9 +27,9 @@ import com.google.android.material.textfield.TextInputLayout
  * as we previously did it with the deprecated class [android.os.AsyncTask]
  */
 fun <R> CoroutineScope.executeAsyncTask(
-        onPreExecute: () -> Unit,
-        doInBackground: () -> R,
-        onPostExecute: (R) -> Unit
+    onPreExecute: () -> Unit,
+    doInBackground: () -> R,
+    onPostExecute: (R) -> Unit
 ) = launch {
     onPreExecute() // runs in Main Thread
     val result = withContext(Dispatchers.IO) {
@@ -36,8 +38,8 @@ fun <R> CoroutineScope.executeAsyncTask(
     onPostExecute(result) // runs in Main Thread
 }
 
-/** Int extension
- *
+/**
+ * Int extension
  */
 
 fun Int.noError() = this == Int.NO_ERROR
@@ -61,8 +63,8 @@ fun String.Companion.join(array: Array<String>, separator: Char?): String {
     return stringBuilder.toString()
 }
 
-/** TextInputLayout extension
- *
+/**
+ * TextInputLayout extension
  */
 fun TextInputLayout.onError(@StringRes error: Int) {
     this.error = if (error.noError()) null else resources.getString(error)
@@ -116,7 +118,13 @@ fun Fragment.replaceFragment(
     containerId: Int = R.id.fragment_container,
     transition: Int? = null
 ) {
-    replaceFragment(this.requireFragmentManager(), fragment, transition, addToBackStack, containerId)
+    replaceFragment(
+        this.requireFragmentManager(),
+        fragment,
+        transition,
+        addToBackStack,
+        containerId
+    )
 }
 
 private fun addFragment(
@@ -149,4 +157,30 @@ private fun replaceFragment(
         transaction.addToBackStack(fragment.tag)
     }
     transaction.commit()
+}
+
+/**
+ * Context extension
+ */
+
+fun Fragment.getString(locale: Locale, resId: Int): String {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) { // use latest api
+        val config = Configuration(resources.configuration)
+        config.setLocale(locale)
+        requireContext().createConfigurationContext(config).getText(resId).toString()
+    } else { // support older android versions
+        val conf: Configuration = resources.configuration
+        val savedLocale: Locale = conf.locale
+        conf.locale = locale
+        resources.updateConfiguration(conf, null)
+
+        // retrieve resources from desired locale
+        val result = resources.getString(resId)
+
+        // restore original locale
+        conf.locale = savedLocale
+        resources.updateConfiguration(conf, null)
+
+        result
+    }
 }

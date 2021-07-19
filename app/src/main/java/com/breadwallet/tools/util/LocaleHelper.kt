@@ -3,7 +3,7 @@ package com.breadwallet.tools.util
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
-import android.preference.PreferenceManager
+import androidx.preference.PreferenceManager
 import com.breadwallet.entities.Language
 import java.util.*
 
@@ -43,15 +43,6 @@ class LocaleHelper private constructor() {
         return context
     }
 
-    private fun getLocale(language: Language): Locale {
-        val codes = language.code.split("-")
-        return if (codes.size == 2) {
-            Locale(codes[0], codes[1])
-        } else {
-            Locale(codes[0])
-        }
-    }
-
     fun setLocaleIfNeeded(language: Language): Boolean {
         if (language == currentLocale) {
             return false
@@ -77,6 +68,15 @@ class LocaleHelper private constructor() {
                 Language.ENGLISH.code
             )
             instance.currentLocale = Language.find(code)
+        }
+
+        fun getLocale(language: Language): Locale {
+            val codes = language.code.split("-")
+            return if (codes.size == 2) {
+                Locale(codes[0], codes[1])
+            } else {
+                Locale(codes[0])
+            }
         }
     }
 }

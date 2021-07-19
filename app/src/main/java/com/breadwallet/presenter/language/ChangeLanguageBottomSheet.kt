@@ -1,15 +1,21 @@
 package com.breadwallet.presenter.language
 
+import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import com.breadwallet.R
 import com.breadwallet.entities.Language
 import com.breadwallet.presenter.activities.intro.IntroActivity
 import com.breadwallet.presenter.spend.RoundedBottomSheetDialogFragment
 import com.breadwallet.tools.util.LocaleHelper
+import com.breadwallet.tools.util.Utils
+import com.breadwallet.tools.util.getString
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.android.synthetic.main.change_language_bottom_sheet.*
 
 
@@ -38,9 +44,16 @@ class ChangeLanguageBottomSheet : RoundedBottomSheetDialogFragment() {
 
         val adapter = LanguageAdapter(Language.values()).apply {
             selectedPosition = currentLanguage.ordinal
-            onLanguageChecked = { toolbar.title = it.desc }
+            onLanguageChecked = {
+                toolbar.title = it.desc
+                ok_button.text = getString(LocaleHelper.getLocale(it), R.string.Button_ok)
+            }
         }
         recycler_view.adapter = adapter
+
+        recycler_view.post {
+            recycler_view.scrollToPosition(adapter.selectedPosition)
+        }
 
         ok_button.setOnClickListener {
             dismiss()
@@ -50,5 +63,36 @@ class ChangeLanguageBottomSheet : RoundedBottomSheetDialogFragment() {
                 startActivity(intent)
             }
         }
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = BottomSheetDialog(requireContext(), theme)
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(false)
+        val behavior = dialog.behavior
+        behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        behavior.setPeekHeight(0, true)
+        behavior.setExpandedOffset(Utils.getPixelsFromDps(context, 16))
+        behavior.isFitToContents = false
+        behavior.isHideable = true
+
+        behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                if (newState == BottomSheetBehavior.STATE_DRAGGING) {
+                    behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                }
+            }
+        })
+
+        dialog.setOnShowListener {
+            val bottomSheet: FrameLayout? = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet)
+            val lp = bottomSheet?.layoutParams
+            lp?.height = ViewGroup.LayoutParams.MATCH_PARENT
+            bottomSheet?.layoutParams = lp
+        }
+        return dialog
     }
 }
